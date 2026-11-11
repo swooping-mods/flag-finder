@@ -1,5 +1,7 @@
 # Flag Finder
 
+<img src="media/icon.png" alt="Flag Finder icon" width="128" height="128">
+
 Buy the $125 radar in Modded Shop; equip it in the native hotbar.
 
 ## Install
