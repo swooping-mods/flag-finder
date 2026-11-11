@@ -1,0 +1,34 @@
+{
+  "id": "flag-finder",
+  "kind": "native",
+  "version": "0.4.0",
+  "backlog": "M08",
+  "feature_dependencies": [
+    "shop-framework",
+    "equipment-framework",
+    "hints-framework"
+  ],
+  "gameplay": true,
+  "play_help": [
+    "Buy the $125 handheld radar in Modded Shop (Ctrl+Shift+F2); assign it in Inventory and select its hotbar slot.",
+    "Authored handheld scanner displays live bearing and range on its rebuilt screen; T cycles flags, sites and all.",
+    "Native build and display checks pass; rendered gameplay and co-op remain unqualified."
+  ],
+  "requires_apis": [
+    {
+      "api": "shop-framework.shop",
+      "abi": 1,
+      "min_size": 56
+    },
+    {
+      "api": "equipment-framework.equipment",
+      "abi": 1,
+      "min_size": 32
+    },
+    {
+      "api": "hints-framework.hints",
+      "abi": 1,
+      "min_size": 24
+    }
+  ]
+}
