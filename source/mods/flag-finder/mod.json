@@ -12,7 +12,7 @@
   "play_help": [
     "Buy the $125 handheld radar in Modded Shop (Ctrl+Shift+F2); assign it in Inventory and select its hotbar slot.",
     "Authored handheld scanner displays live bearing and range on its rebuilt screen; T cycles flags, sites and all.",
-    "Native build and display checks pass; rendered gameplay and co-op remain unqualified."
+    "Current source repairs await host/build checks; rendered gameplay and co-op remain unqualified."
   ],
   "requires_apis": [
     {

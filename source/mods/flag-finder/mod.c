@@ -11,11 +11,11 @@
 #include "assets/generated/model_data.h"
 #include "radar_screen.h"
 static int nearest=-1;static float metres=0;
-static DRoot radar;static SMResources radar_resources;static SURoot radar_pixels;
+static DRoot radar,radar_camera;static SMResources radar_resources;static SURoot radar_pixels;
 static PTR radar_set_pixels,radar_apply;static float radar_next_frame,radar_retry;
 static RadarPixel radar_frame[RADAR_WIDTH*RADAR_HEIGHT],radar_upload[RADAR_WIDTH*RADAR_HEIGHT];
 static void radar_remove(void){
- destroy_root(&radar);su_drop(&radar_pixels);sm_release(&radar_resources);radar_next_frame=0;
+ destroy_root(&radar);ddrop(&radar_camera);su_drop(&radar_pixels);sm_release(&radar_resources);radar_next_frame=radar_retry=0;
 }
 static int radar_prepare(void){
  if(!su.ready&&!su_bind(GetModuleHandleA("GameAssembly.dll")))return 0;
@@ -35,13 +35,29 @@ static int radar_prepare(void){
  int filter=1;void *filter_args[]={&filter};call(su_method("UnityEngine","Texture","set_filterMode","UnityEngine.FilterMode"),su_get(radar_resources.textures[3]),filter_args,&ok);
  return ok;
 }
+/* Read the active view without claiming or mutating shared camera resources.
+ * Project onto the moon tangent plane; straight-up/down views use screen up. */
+static int radar_bearing(DVec player,DVec target,DVec forward,DVec camera_up,float *x,float *y){
+ *x=*y=0;if(!(vdot(player,player)>.0001f))return 0;
+ DVec up=normal(player),delta=vadd(target,vmul(up,-vdot(target,up)));
+ float length=vdot(delta,delta);if(!(length>=0))return 0;
+ if(length<=.000001f)return 1;
+ forward=vadd(forward,vmul(up,-vdot(forward,up)));
+ if(vdot(forward,forward)<.0001f)forward=vadd(camera_up,vmul(up,-vdot(camera_up,up)));
+ if(!(vdot(forward,forward)>.0001f))return 0;
+ forward=normal(forward);delta=normal(delta);
+ DVec right={up.y*forward.z-up.z*forward.y,up.z*forward.x-up.x*forward.z,up.x*forward.y-up.y*forward.x};
+ *x=vdot(delta,right);*y=vdot(delta,forward);return 1;
+}
 static void radar_hold(PTR walker,int visible){
  if(!visible){radar_remove();return;}if(m.time<radar_retry)return;
  int ok=1;PTR camera=0;PTR field=get_field(object_class(walker),"viewCamera");if(field)field_value(walker,field,&camera);
- if(!camera){radar_remove();return;}
+ if(!malive(camera)){radar_remove();return;}
+ /* A surviving old camera must not retain the new local viewmodel. */
+ if(radar_camera&&dget(radar_camera)!=camera)radar_remove();
  PTR camera_transform=call(m.transform,camera,0,&ok);if(!ok||!camera_transform){radar_remove();return;}
  if(!malive(dget(radar))){
-  radar_remove();if(!radar_prepare())goto fail;
+  radar_remove();radar_camera=dhold(camera);if(!radar_camera||!radar_prepare())goto fail;
   PTR root=sm_attach(&rd_model,&radar_resources,camera_transform,2,"MoonLab held Flag Finder");
   if(!root)goto fail;radar=dhold(root);if(!radar){su_destroy(root);goto fail;}
   PTR tr=su_transform(root);DVec position={.25f,-.17f,.52f};void *args[]={&position};call(su.tr_local_position,tr,args,&ok);
@@ -57,12 +73,9 @@ static void radar_hold(PTR walker,int visible){
  if(m.time<radar_next_frame)return;radar_next_frame=m.time+.1f;
  RadarReading reading={(int)(m.known[0]%3),nearest>=0,metres,0,0,(unsigned)(m.time*4)};
  if(reading.found){
-  DVec player=mpos(walker,&ok),up=normal(player),target=direction(dget(m.world),nearest,&ok);
-  DVec delta=vadd(target,vmul(up,-vdot(target,up))),forward=dvector(su.tr_forward,camera_transform,&ok);
-  forward=vadd(forward,vmul(up,-vdot(forward,up)));
-  if(vdot(forward,forward)<.0001f){forward=dvector(su.tr_up,camera_transform,&ok);forward=vadd(forward,vmul(up,-vdot(forward,up)));}
-  forward=normal(forward);DVec right={up.y*forward.z-up.z*forward.y,up.z*forward.x-up.x*forward.z,up.x*forward.y-up.y*forward.x};
-  if(vdot(delta,delta)>.000001f){delta=normal(delta);reading.bearing_x=vdot(delta,right);reading.bearing_y=vdot(delta,forward);}
+  DVec player=mpos(walker,&ok),target=direction(dget(m.world),nearest,&ok);
+  DVec forward=dvector(su.tr_forward,camera_transform,&ok),camera_up=dvector(su.tr_up,camera_transform,&ok);
+  if(!radar_bearing(player,target,forward,camera_up,&reading.bearing_x,&reading.bearing_y))reading.found=0;
   if(!ok)reading.found=0;
  }
  radar_draw(radar_frame,reading);
@@ -75,9 +88,10 @@ static void radar_hold(PTR walker,int visible){
 fail:
  radar_remove();radar_retry=m.time+5;mevent("radar-model-unavailable");
 }
-static void feature_end(void){fw_clear();radar_remove();nearest=-1;metres=0;}
+static void feature_end(void){fw_clear();radar_remove();nearest=-1;metres=0;m.active_tool=0;m.next_scan=0;}
 static void feature_tick(PTR walker,PTR world,int input){
- (void)input;int ok=1,blocked=boolean(m.menu,walker,&ok);m.active_tool=fw_equipped(walker);
+ int ok=1,blocked=boolean(m.menu,walker,&ok)||boolean(m.blocked,walker,&ok);m.active_tool=fw_equipped(walker);
+ if(!input||!ok||blocked||!m.owned||!m.active_tool){feature_end();return;}
  if(m.owned&&m.active_tool&&m.pressed['T']&&!blocked){m.known[0]=(unsigned char)((m.known[0]+1)%3);m.dirty=1;save();m.next_scan=0;}
  if(m.owned&&m.active_tool&&!blocked&&m.time>=m.next_scan){
   m.next_scan=m.time+.2f;nearest=-1;float r=radius(world);DVec player=mpos(walker,&ok);float best=6400;
@@ -85,8 +99,10 @@ static void feature_tick(PTR walker,PTR world,int input){
   if(ok)nearest=moon_map_nearest(&query,(MoonMapPoint){player.x,player.y,player.z},r,m.known[0],6400,&best);
   metres=msqrt(best);
  }
- radar_hold(walker,m.owned&&m.active_tool&&!blocked&&!mapopen(map())&&boolean(m.first,walker,&ok));
- if(!m.active_tool||blocked){fw_clear();return;}
+ PTR screen=moon_map_screen(&m.mapping,walker,&ok);
+ int opened=screen?boolean(m.mapping.map_open,screen,&ok):1;
+ int first=boolean(m.first,walker,&ok);
+ radar_hold(walker,ok&&!opened&&first);
  char key[64]="T",text[220];moon_input_label("flag-finder.cycle","T",key,sizeof(key));char *p=cat(cat(text,key),": Flags / sites / all | ");
  if(nearest<0)cat(p,"No matching findable within 80 m");else{p=cat(p,"Findable ");p=num(p,(U64)(metres+.5f));cat(p," m");}
  fw_hints->publish(MOD_ID,walker,text);
