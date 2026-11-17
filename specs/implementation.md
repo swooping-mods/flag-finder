@@ -9,6 +9,8 @@ Describes the retained payload **0.4.0**. The behavior prose describes the retai
 Source version **0.4.0** is saved from workshop revision `ca32bbf79ce0840d5166a232bdb3a9fdcd761254`. The retained installable payload remains **0.4.0** with its original bytes. This source update does not rebuild or requalify that payload. The current source and metadata define the candidate; gameplay, rendered behavior and co-op remain unqualified for rebuilt bytes.
 
 The authored behavior and lifecycle descriptions below are retained from the published payload. They are not new qualification evidence for the source candidate. The integration table below follows the current candidate metadata.
+
+Review source patch from workshop `40d4aba472c0aaf6afd37a972d514b8f9411cf2d` updates only the files listed in `provenance.json` patches; other source retains the base revision above. The bounded source patch horizontally centers the FLAG FINDER title using its visible glyph width. The shared renderer fixture and pixel comparison are recorded by the owning workshop; no rebuilt game payload is qualified. Existing installable packages and tags are unchanged.
 <!-- /source-only-sync -->
 
 ## Behavior

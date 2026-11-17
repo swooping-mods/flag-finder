@@ -41,7 +41,10 @@ static void radar_draw(RadarPixel *p,RadarReading r){
   }
   p[y*RADAR_WIDTH+x]=c;
  }
- radar_text(p,34,20,"FLAG FINDER",2,ink);
+ static const char title[]="FLAG FINDER";
+ /* Center visible glyphs, excluding the final two-pixel character gap. */
+ int title_width=((int)sizeof(title)-1)*6*2-2;
+ radar_text(p,(RADAR_WIDTH-title_width)/2,20,title,2,ink);
  radar_line(p,28,43,292,43,muted);
  radar_text(p,31,53,r.filter==0?"FLAGS":r.filter==1?"SITES":"ALL",1,amber);radar_text(p,267,53,"80M",1,muted);
  radar_line(p,155,50,160,46,ink);radar_line(p,160,46,165,50,ink);

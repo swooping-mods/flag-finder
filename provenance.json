@@ -7,7 +7,16 @@
     "compiled": false,
     "gameplay_requalified": false,
     "production_closure_complete": true,
-    "deferred_test_fixture_gaps": []
+    "deferred_test_fixture_gaps": [],
+    "patches": [
+      {
+        "workshop_revision": "40d4aba472c0aaf6afd37a972d514b8f9411cf2d",
+        "files": [
+          "mods/flag-finder/radar_screen.h"
+        ],
+        "gameplay_requalified": false
+      }
+    ]
   },
   "source_files": {
     "mods/equipment-framework/sdk/client.h": {
@@ -43,8 +52,8 @@
       "export_sha256": "84f5a137aada9be526b727776f2f3fb4cf2cb83d75a126635c218379688c71e1"
     },
     "mods/flag-finder/radar_screen.h": {
-      "source_sha256": "bea7848241902cb1014be15c9204b6fde4be1fcdc194b96d7ab0a9c7ca1f443c",
-      "export_sha256": "bea7848241902cb1014be15c9204b6fde4be1fcdc194b96d7ab0a9c7ca1f443c"
+      "source_sha256": "11c8b49208f439783698e31a7de7ae27ca5840dc6ebe2a354ed33a7779342569",
+      "export_sha256": "11c8b49208f439783698e31a7de7ae27ca5840dc6ebe2a354ed33a7779342569"
     },
     "mods/flag-finder/runtime.h": {
       "source_sha256": "b4a4ae5390563821906521a25e8d0b0c415f3ec84eedf9416ce94956ddbb4a0b",
